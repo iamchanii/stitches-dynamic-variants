@@ -3,7 +3,9 @@ import type * as _StyledComponent from "@stitches/react/types/styled-component";
 import type * as Util from "@stitches/react/types/util";
 
 type ToVariantsType<Variants> = {
-  [k in keyof Variants]?: unknown extends Variants[k]
+  [k in keyof Variants]?: Variants[k] extends (key: infer K) => any
+  ? K :
+  unknown extends Variants[k]
     ? string
     : keyof Variants[k];
 };
@@ -27,16 +29,17 @@ export type CreateDynamicStyled = {
       Variants,
       CVariants extends Variants,
       DynamicVariants,
-      CSS = CSSUtil.CSS<Media, Theme, ThemeMap, Utils>
+      CDynamicVariants extends {
+        [k in keyof DynamicVariants]?: (key: unknown) => CSS
+      },
+      CSS = CSSUtil.CSS<Media, Theme, ThemeMap, Utils>,
     >(
       type: Type,
       StyleConfig: {
         variants?: {
           [k in keyof Variants]: { [b in keyof Variants[k]]: CSS };
         };
-        dynamicVariants?: {
-          [k in keyof DynamicVariants]?: (val: string) => CSS;
-        };
+        dynamicVariants?: CDynamicVariants
         compoundVariants?: ({ [k in keyof CVariants]: keyof CVariants[k] } & {
           css?: CSS;
         })[];
@@ -56,7 +59,7 @@ export type CreateDynamicStyled = {
     ): StyledComponent<
       Type,
       ToVariantsType<Variants>,
-      ToVariantsType<DynamicVariants>,
+      ToVariantsType<CDynamicVariants>,
       Media,
       CSS
     >;
